@@ -170,7 +170,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   'AI Career Guide',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -180,11 +180,14 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
         elevation: 2,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {
-            context.go('/');
-          },
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => context.pop(),
+        )
+            : IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => context.go('/'),
         ),
         actions: [
           IconButton(
@@ -259,7 +262,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -323,7 +326,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),

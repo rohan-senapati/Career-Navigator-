@@ -52,7 +52,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: CustomNavBar(currentIndex: 3,),
+      bottomNavigationBar: CustomNavBar(currentIndex: 2),
     );
   }
 }

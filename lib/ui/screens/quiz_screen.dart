@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/themes.dart';
 import '../widgets/navbar.dart';
@@ -15,6 +16,12 @@ class QuizScreen extends StatelessWidget {
         title: Text(quizId != null ? 'Quiz $quizId' : 'Career Quiz'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () {
+            GoRouter.of(context).pop();
+          },
+        ),
       ),
       body: Center(
         child: Text(
@@ -23,7 +30,7 @@ class QuizScreen extends StatelessWidget {
               : 'Career Quiz Screen - Coming Soon',
         ),
       ),
-      bottomNavigationBar: const CustomNavBar(currentIndex: 2),
+      bottomNavigationBar: const CustomNavBar(currentIndex: 1),
     );
   }
 }

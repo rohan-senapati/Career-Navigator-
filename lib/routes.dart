@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'ui/screens/login_screen.dart';
-import 'ui/screens/register_screen.dart';
+import 'ui/screens/sign_up.dart';
 import 'ui/screens/profile_screen.dart';
 import 'ui/screens/chatbot_screen.dart';
 import 'ui/screens/quiz_screen.dart';
@@ -38,7 +38,7 @@ class AppRoutes {
       GoRoute(
         path: register,
         name: 'register',
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) => const SignUp(),
       ),
       GoRoute(
         path: profile,

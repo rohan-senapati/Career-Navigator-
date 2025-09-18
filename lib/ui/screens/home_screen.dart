@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_ai_chatbot/flutter_ai_chatbot.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../core/themes.dart';
@@ -64,12 +65,40 @@ class HomeScreen extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => context.push('/login'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: const Text('Sign In'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => context.go('/register'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(color: AppColors.primary),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: const Text('Sign Up'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Features Grid
                 Expanded(
                   child: GridView.count(
@@ -79,19 +108,11 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       _buildFeatureCard(
                         context,
-                        'AI Chatbot',
-                        'Get personalized career advice',
-                        Icons.chat_bubble_outline,
-                        AppColors.accent,
-                        () => context.go('/chatbot'),
-                      ),
-                      _buildFeatureCard(
-                        context,
                         'Career Quiz',
                         'Assess your skills and interests',
                         Icons.quiz_outlined,
                         AppColors.secondary,
-                        () => context.go('/quiz'),
+                            () => context.go('/quiz'),
                       ),
                       _buildFeatureCard(
                         context,
@@ -99,7 +120,7 @@ class HomeScreen extends StatelessWidget {
                         'Monitor your career development',
                         Icons.trending_up_outlined,
                         AppColors.info,
-                        () => context.go('/analytics'),
+                            () => context.go('/analytics'),
                       ),
                       _buildFeatureCard(
                         context,
@@ -107,7 +128,7 @@ class HomeScreen extends StatelessWidget {
                         'Discover new opportunities',
                         Icons.lightbulb_outline,
                         AppColors.warning,
-                        () => context.go('/recommendations'),
+                            () => context.go('/recommendations'),
                       ),
                     ],
                   ),
@@ -117,18 +138,24 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+      // Floating Action Button for Chatbot
+      floatingActionButton: ChatBotWidget(
+        apiKey:"AIzaSyBujTjUSghUJly25yAfuZ2kLjznmFTgf8I",
+        aiService: AIService.gemini,
+        chatIcon: Icons.psychology,
+      ),
       bottomNavigationBar: const CustomNavBar(currentIndex: 0),
     );
   }
 
   Widget _buildFeatureCard(
-    BuildContext context,
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
+      BuildContext context,
+      String title,
+      String description,
+      IconData icon,
+      Color color,
+      VoidCallback onTap,
+      ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -186,5 +213,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-

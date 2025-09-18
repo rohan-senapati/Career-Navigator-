@@ -25,16 +25,13 @@ class CustomNavBar extends StatelessWidget {
             context.go('/');
             break;
           case 1:
-            context.go('/chatbot');
+            context.push('/quiz');
             break;
           case 2:
-            context.go('/quiz');
+            context.push('/recommendations');
             break;
           case 3:
-            context.go('/recommendations');
-            break;
-          case 4:
-            context.go('/profile');
+            context.push('/profile');
             break;
         }
       },
@@ -43,11 +40,6 @@ class CustomNavBar extends StatelessWidget {
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
           label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat_bubble_outline),
-          activeIcon: Icon(Icons.chat_bubble),
-          label: 'Chat',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.quiz_outlined),

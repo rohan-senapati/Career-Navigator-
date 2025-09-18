@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/themes.dart';
 import '../widgets/navbar.dart';
@@ -87,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ],
       ),
-      bottomNavigationBar: const CustomNavBar(currentIndex: 0),
+      bottomNavigationBar: const CustomNavBar(currentIndex: 3),
     );
   }
 
@@ -120,6 +121,15 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         ),
+      ),
+      leading: Navigator.of(context).canPop()
+          ? IconButton(
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        onPressed: () => context.pop(),
+      )
+          : IconButton(
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        onPressed: () => context.go('/'),
       ),
       actions: [
         IconButton(
