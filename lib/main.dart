@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/themes.dart';
 import 'core/constants.dart';
 import 'routes.dart';
+import 'services/auth_service.dart';
 
 void main() {
   runApp(
@@ -12,11 +13,19 @@ void main() {
   );
 }
 
-class CareerNavigatorApp extends StatelessWidget {
+class CareerNavigatorApp extends ConsumerWidget {
   const CareerNavigatorApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize auth on app startup
+    ref.listen(authStateProvider, (previous, next) {
+      // Auth state changes will be handled by the router
+    });
+
+    // Trigger auth initialization
+    ref.watch(authStateProvider);
+
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,

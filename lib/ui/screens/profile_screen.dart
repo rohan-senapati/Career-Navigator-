@@ -1,29 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/themes.dart';
+import '../../models/auth.dart';
+import '../../services/auth_service.dart';
 import '../widgets/navbar.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
-
-  final String userName = "John Doe";
-  final String userEmail = "john.doe@example.com";
-  final String userBio = "Passionate developer with 5+ years of experience in mobile and web development. Always eager to learn new technologies and solve challenging problems.";
-  final int profileViews = 142;
-  final int connections = 89;
-  final DateTime joinDate = DateTime(2023, 3, 15);
 
   @override
   void initState() {
@@ -60,11 +55,38 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authStateProvider);
+    final user = authState.user;
+
+    if (!authState.isAuthenticated || user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Profile'),
+          backgroundColor: AppColors.primary,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('Please log in to view your profile'),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.go('/login'),
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(),
+          _buildAppBar(context, user),
           SliverToBoxAdapter(
             child: AnimatedBuilder(
               animation: _animationController,
@@ -75,10 +97,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                     position: _slideAnimation,
                     child: Column(
                       children: [
-                        _buildProfileHeader(),
-                        _buildStatsCards(),
-                        _buildProfileSections(),
-                        const SizedBox(height: 100), // Space for bottom nav
+                        _buildProfileHeader(user),
+                        _buildStatsCards(user),
+                        _buildProfileSections(context, authState, ref),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -92,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(BuildContext context, dynamic user) {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
@@ -134,17 +156,17 @@ class _ProfileScreenState extends State<ProfileScreen>
       actions: [
         IconButton(
           icon: const Icon(Icons.edit),
-          onPressed: () => _showEditProfileDialog(),
+          onPressed: () => _showEditProfileDialog(context),
         ),
         IconButton(
           icon: const Icon(Icons.more_vert),
-          onPressed: () => _showMoreOptions(),
+          onPressed: () => _showMoreOptions(context),
         ),
       ],
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(dynamic user) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -173,38 +195,46 @@ class _ProfileScreenState extends State<ProfileScreen>
                     colors: [AppColors.primary, AppColors.accent],
                   ),
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white,
                   child: CircleAvatar(
                     radius: 46,
                     backgroundColor: AppColors.accent,
-                    child: Icon(Icons.person, size: 50, color: Colors.white),
+                    child: Text(
+                      user.initials,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 16,
+              if (user.isEmailVerified)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
-            userName,
+            user.fullName,
             style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -212,37 +242,71 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            userBio,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.5,
+          if (user.currentRole != null)
+            Text(
+              user.currentRole,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
+          if (user.company != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'at ${user.company}',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          if (user.bio != null && user.bio!.isNotEmpty)
+            Text(
+              user.bio!,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsCards() {
+  Widget _buildStatsCards(dynamic user) {
+    final yearsExp = int.tryParse(user.experienceYears) ?? 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Expanded(child: _buildStatCard('Profile Views', profileViews.toString(), Icons.visibility)),
+          Expanded(
+            child: _buildStatCard(
+              'Experience',
+              '$yearsExp yrs',
+              Icons.work_outline,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _buildStatCard('Connections', connections.toString(), Icons.people)),
+          Expanded(
+            child: _buildStatCard(
+              'Education',
+              user.educationLevel ?? 'Not Set',
+              Icons.school_outlined,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _buildStatCard('Member Since', '${joinDate.year}', Icons.calendar_today)),
+          Expanded(
+            child: _buildStatCard(
+              'Status',
+              user.isProfileComplete ? 'Complete' : 'Incomplete',
+              Icons.verified_user_outlined,
+            ),
+          ),
         ],
       ),
     );
@@ -256,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha:0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -270,10 +334,11 @@ class _ProfileScreenState extends State<ProfileScreen>
           Text(
             value,
             style: GoogleFonts.inter(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(
@@ -289,7 +354,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileSections() {
+  Widget _buildProfileSections(
+      BuildContext context,
+      AuthState authState,
+      WidgetRef ref,
+      ) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -297,24 +366,54 @@ class _ProfileScreenState extends State<ProfileScreen>
           _buildSectionCard(
             'Account Settings',
             [
-              _buildListTile('Personal Information', Icons.person_outline, () => _navigateToPersonalInfo()),
-              _buildListTile('Privacy Settings', Icons.privacy_tip_outlined, () => _navigateToPrivacy()),
-              _buildListTile('Notifications', Icons.notifications_outlined, () => _navigateToNotifications()),
-              _buildListTile('Security', Icons.security_outlined, () => _navigateToSecurity()),
+              _buildListTile('Personal Information', Icons.person_outline, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Navigate to Personal Info')),
+                );
+              }),
+              _buildListTile('Privacy Settings', Icons.privacy_tip_outlined, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Navigate to Privacy')),
+                );
+              }),
+              _buildListTile('Notifications', Icons.notifications_outlined, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Navigate to Notifications')),
+                );
+              }),
+              _buildListTile('Security', Icons.security_outlined, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Navigate to Security')),
+                );
+              }),
             ],
           ),
           const SizedBox(height: 16),
           _buildSectionCard(
             'Support & More',
             [
-              _buildListTile('Help Center', Icons.help_outline, () => _navigateToHelp()),
-              _buildListTile('Contact Support', Icons.support_agent, () => _contactSupport()),
-              _buildListTile('Rate App', Icons.star_outline, () => _rateApp()),
-              _buildListTile('About', Icons.info_outline, () => _showAbout()),
+              _buildListTile('Help Center', Icons.help_outline, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Navigate to Help')),
+                );
+              }),
+              _buildListTile('Contact Support', Icons.support_agent, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Opening support chat...')),
+                );
+              }),
+              _buildListTile('Rate App', Icons.star_outline, () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Opening app store...')),
+                );
+              }),
+              _buildListTile('About', Icons.info_outline, () {
+                _showAbout(context);
+              }),
             ],
           ),
           const SizedBox(height: 24),
-          _buildLogoutButton(),
+          _buildLogoutButton(context, ref),
         ],
       ),
     );
@@ -327,7 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha:0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -370,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       height: 56,
@@ -389,7 +488,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ],
       ),
       child: ElevatedButton(
-        onPressed: () => _showLogoutDialog(),
+        onPressed: () => _showLogoutDialog(context, ref),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -416,65 +515,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Navigation methods (implement these based on your routing)
-  void _navigateToPersonalInfo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigate to Personal Information')),
-    );
-  }
-
-  void _navigateToPrivacy() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigate to Privacy Settings')),
-    );
-  }
-
-  void _navigateToNotifications() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigate to Notifications')),
-    );
-  }
-
-  void _navigateToSecurity() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigate to Security Settings')),
-    );
-  }
-  void _navigateToHelp() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigate to Help Center')),
-    );
-  }
-
-  void _contactSupport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening support chat...')),
-    );
-  }
-
-  void _rateApp() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening app store for rating...')),
-    );
-  }
-
-  void _showAbout() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About Career Navigator'),
-        content: const Text('Version 1.0.0\n\nYour companion for career growth and job searching.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditProfileDialog() {
+  void _showEditProfileDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -490,7 +531,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _showMoreOptions() {
+  void _showMoreOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -524,7 +565,23 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _showLogoutDialog() {
+  void _showAbout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About Career Navigator'),
+        content: const Text('Version 1.0.0\n\nYour companion for career growth and job searching.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -538,9 +595,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logged out successfully')),
-              );
+              ref.read(authStateProvider.notifier).logout();
+              context.go('/');
             },
             child: const Text('Log Out'),
           ),
