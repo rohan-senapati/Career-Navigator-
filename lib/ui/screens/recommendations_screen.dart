@@ -342,7 +342,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       ),
     );
   }
-  
+
   Widget _buildCourseCard(CourseRecommendation course) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -572,21 +572,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  Color _getLevelColor(String level) {
-    switch (level.toLowerCase()) {
-      case 'beginner':
-        return AppColors.success;
-      case 'intermediate':
-        return AppColors.warning;
-      case 'advanced':
-        return AppColors.error;
-      case 'expert':
-        return AppColors.primaryDark;
-      default:
-        return AppColors.grey;
-    }
-  }
-
   Widget _buildLoadingState() {
     return Center(
       child: Column(
@@ -766,48 +751,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       ),
     );
   }
-
-  void _showSkillDetails(SkillRecommendation skill) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(skill.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(skill.description),
-            const SizedBox(height: 16),
-            Text(
-              'Learning Resources:',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            ...skill.learningResources.map((resource) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('• $resource'),
-            )),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${skill.title} added to learning path')),
-              );
-            },
-            child: const Text('Add to Path'),
-          ),
-        ],
-      ),
-    );
-  }
-
+  
   void _showCourseDetails(CourseRecommendation course) {
     showDialog(
       context: context,
