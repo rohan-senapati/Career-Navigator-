@@ -20,6 +20,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
   int _selectedTab = 0;
 
 
+
   @override
   void initState() {
     super.initState();
@@ -341,124 +342,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       ),
     );
   }
-
-  Widget _buildSkillCard(SkillRecommendation skill) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.stars,
-                    color: AppColors.secondary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        skill.title,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        skill.level.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: _getLevelColor(skill.level),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildConfidenceBadge(skill.confidence),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              skill.description,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.schedule, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 4),
-                Text(
-                  '${skill.estimatedHoursToLearn} hours',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Icon(Icons.school, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${skill.learningResources.length} resources',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _showSkillDetails(skill),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Start Learning'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  
   Widget _buildCourseCard(CourseRecommendation course) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
