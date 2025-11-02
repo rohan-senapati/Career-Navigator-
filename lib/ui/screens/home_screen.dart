@@ -75,12 +75,11 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: isAuthenticated
-          ? null
-          : ChatBotWidget(
+          ? ChatBotWidget(
         apiKey: "AIzaSyBujTjUSghUJly25yAfuZ2kLjznmFTgf8I",
         aiService: AIService.gemini,
         chatIcon: Icons.psychology,
-      ),
+      ):null,
       bottomNavigationBar: isAuthenticated
           ? const CustomNavBar(currentIndex: 0)
           : null,

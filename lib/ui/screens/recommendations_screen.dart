@@ -79,7 +79,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
             fontWeight: FontWeight.w600,
           ),
           tabs: const [
-            Tab(text: 'Job'),
+            Tab(text: 'Job Finder'),
             Tab(text: 'Courses'),
           ],
         ),
