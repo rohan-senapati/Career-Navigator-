@@ -751,7 +751,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       ),
     );
   }
-  
+
   void _showCourseDetails(CourseRecommendation course) {
     showDialog(
       context: context,
