@@ -19,7 +19,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTab = 0;
-  String? _selectedCourse;
 
   @override
   void initState() {
@@ -133,7 +132,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -290,7 +289,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -403,7 +402,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha:0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -426,7 +425,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               child: Icon(
                 Icons.play_circle_outline,
                 size: 48,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha:0.1),
               ),
             ),
           ),
@@ -443,7 +442,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.2),
+                        color: AppColors.accent.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -590,7 +589,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              ref.invalidate(careerRecommendationsProvider);
               ref.invalidate(courseRecommendationsProvider);
             },
             child: const Text('Refresh'),
@@ -627,7 +625,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              ref.invalidate(careerRecommendationsProvider);
+
               ref.invalidate(courseRecommendationsProvider);
             },
             child: const Text('Try Again'),
