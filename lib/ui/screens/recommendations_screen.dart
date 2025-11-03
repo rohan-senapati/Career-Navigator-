@@ -11,20 +11,20 @@ class RecommendationScreen extends ConsumerStatefulWidget {
   const RecommendationScreen({super.key});
 
   @override
-  ConsumerState<RecommendationScreen> createState() => _RecommendationScreenState();
+  ConsumerState<RecommendationScreen> createState() =>
+      _RecommendationScreenState();
 }
 
 class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTab = 0;
-
-
+  String? _selectedCourse;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _selectedTab = _tabController.index;
@@ -44,29 +44,29 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-          'Discover Careers',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          _selectedTab == 0 ? 'Discover Careers' : 'Smart Course Recommender',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 20),
         ),
-        backgroundColor: AppColors.primary,
+        backgroundColor: _selectedTab == 0
+            ? AppColors.primary
+            : const Color(0xFF2C3E50),
         foregroundColor: Colors.white,
         elevation: 0,
         leading: Navigator.of(context).canPop()
             ? IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => context.pop(),
-        )
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () => context.pop(),
+              )
             : IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => context.go('/'),
-        ),
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () => context.go('/'),
+              ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(),
-          ),
+          if (_selectedTab == 0) // Only show filter for Job Finder
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: () => _showFilterDialog(),
+            ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -86,160 +86,149 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildJobsTab(),
-          _buildCoursesTab(),
-        ],
+        children: [_buildJobsTab(), _buildCoursesTab()],
       ),
       bottomNavigationBar: const CustomNavBar(currentIndex: 2),
     );
   }
 
   Widget _buildJobsTab() {
-    final careersAsync = ref.watch(careerRecommendationsProvider);
-
-    return careersAsync.when(
-      data: (careers) {
-        if (careers.isEmpty) {
-          return _buildEmptyState('No career recommendations available');
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(careerRecommendationsProvider);
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSectionHeader(
-                'Top Career Matches',
-                'Based on your profile and interests',
-              ),
-              const SizedBox(height: 16),
-              ...careers.map((career) => _buildCareerCard(career)),
-            ],
-          ),
-        );
-      },
-      loading: () => _buildLoadingState(),
-      error: (error, stack) => _buildErrorState(error.toString()),
-    );
-  }
-
-  Widget _buildCoursesTab() {
-    final coursesAsync = ref.watch(courseRecommendationsProvider);
-
-    return coursesAsync.when(
-      data: (courses) {
-        if (courses.isEmpty) {
-          return _buildEmptyState('No course recommendations available');
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(courseRecommendationsProvider);
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSectionHeader(
-                'Top Courses',
-                'Learn new skills and advance your career',
-              ),
-              const SizedBox(height: 16),
-              ...courses.map((course) => _buildCourseCard(course)),
-            ],
-          ),
-        );
-      },
-      loading: () => _buildLoadingState(),
-      error: (error, stack) => _buildErrorState(error.toString()),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, String subtitle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCareerCard(CareerRecommendation career) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(24),
+            width: double.infinity,
+            color: AppColors.primary,
+            child: Column(
+              children: [
+                Text(
+                  'Find Your Dream Job',
+                  style: GoogleFonts.inter(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Search through thousands of job listings to find the perfect opportunity for your career growth.',
+                  style: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+
+          // Search Card
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.work_outline,
+                        color: AppColors.textSecondary,
+                      ),
+                      hintText: 'Job Title (e.g. Web Developer)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.location_on_outlined,
+                        color: AppColors.textSecondary,
+                      ),
+                      hintText: 'Location (e.g. Mumbai)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.search),
+                      label: const Text('Search Jobs'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Search Results
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.work_outline,
-                    color: AppColors.primary,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              career.title,
-                              style: GoogleFonts.inter(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          _buildConfidenceBadge(career.confidence),
-                        ],
+                Row(
+                  children: [
+                    const Icon(Icons.search, color: AppColors.textPrimary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Search Results',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 4),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Placeholder for results
+                Center(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 20),
                       Text(
-                        career.category,
+                        'Searching for jobs...',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -249,91 +238,154 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              career.description,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoursesTab() {
+    final coursesAsync = ref.watch(courseRecommendationsProvider);
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 64),
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF3498DB), Color(0xFF2980B9)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+            child: Column(
               children: [
-                _buildInfoChip(
-                  Icons.attach_money,
-                  '\$${(career.salaryRange / 1000).toStringAsFixed(0)}K',
-                  AppColors.success,
+                Text(
+                  'Discover Your Perfect Course',
+                  style: GoogleFonts.inter(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(width: 8),
-                _buildInfoChip(
-                  Icons.trending_up,
-                  '+${career.growthRate}%',
-                  AppColors.info,
-                ),
-                const SizedBox(width: 8),
-                _buildInfoChip(
-                  Icons.schedule,
-                  '${career.estimatedTimeToTransition}mo',
-                  AppColors.warning,
+                const SizedBox(height: 8),
+                Text(
+                  'Get personalized course recommendations based on your interests and goals',
+                  style: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: career.requiredSkills
-                  .take(3)
-                  .map((skill) => _buildSkillChip(skill))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade200),
+
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Find Your Next Course',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            hint: const Text('Select a course'),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.primary),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          ref.invalidate(courseRecommendationsProvider);
+                        },
+                        icon: const Icon(Icons.search, size: 18),
+                        label: const Text('Get'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 15,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            child: Row(
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: () => _showCareerDetails(career),
-                    icon: const Icon(Icons.info_outline, size: 18),
-                    label: const Text('Learn More'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                Text(
+                  'Popular Courses',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.grey.shade200,
-                ),
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: () => _saveCareer(career),
-                    icon: const Icon(Icons.bookmark_outline, size: 18),
-                    label: const Text('Save'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.secondary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
+                const SizedBox(height: 16),
+                coursesAsync.when(
+                  data: (courses) {
+                    if (courses.isEmpty) {
+                      return _buildEmptyState(
+                        'No course recommendations available',
+                      );
+                    }
+                    return Column(
+                      children: courses
+                          .map((course) => _buildCourseCard(course))
+                          .toList(),
+                    );
+                  },
+                  loading: () => _buildLoadingState(),
+                  error: (error, stack) => _buildErrorState(error.toString()),
                 ),
               ],
             ),
@@ -351,7 +403,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -366,13 +418,15 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               gradient: LinearGradient(
                 colors: [AppColors.accent, AppColors.accentDark],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
             ),
             child: Center(
               child: Icon(
                 Icons.play_circle_outline,
                 size: 48,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Colors.white.withOpacity(0.9),
               ),
             ),
           ),
@@ -384,9 +438,12 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.2),
+                        color: AppColors.accent.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -435,7 +492,11 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.people_outline, size: 16, color: AppColors.textSecondary),
+                    Icon(
+                      Icons.people_outline,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${(course.numberOfStudents / 1000).toStringAsFixed(0)}K students',
@@ -445,7 +506,11 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Icon(Icons.schedule, size: 16, color: AppColors.textSecondary),
+                    Icon(
+                      Icons.schedule,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${course.duration}h',
@@ -489,89 +554,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  Widget _buildConfidenceBadge(double confidence) {
-    Color color;
-    String label;
-
-    if (confidence >= 0.8) {
-      color = AppColors.success;
-      label = 'High Match';
-    } else if (confidence >= 0.6) {
-      color = AppColors.warning;
-      label = 'Good Match';
-    } else {
-      color = AppColors.grey;
-      label = 'Fair Match';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.verified, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkillChip(String skill) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        skill,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: AppColors.primary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoadingState() {
     return Center(
       child: Column(
@@ -609,7 +591,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           ElevatedButton(
             onPressed: () {
               ref.invalidate(careerRecommendationsProvider);
-              ref.invalidate(skillRecommendationsProvider);
               ref.invalidate(courseRecommendationsProvider);
             },
             child: const Text('Refresh'),
@@ -647,107 +628,11 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           ElevatedButton(
             onPressed: () {
               ref.invalidate(careerRecommendationsProvider);
-              ref.invalidate(skillRecommendationsProvider);
               ref.invalidate(courseRecommendationsProvider);
             },
             child: const Text('Try Again'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showCareerDetails(CareerRecommendation career) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: ListView(
-            controller: scrollController,
-            padding: const EdgeInsets.all(24),
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                career.title,
-                style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                career.category,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildDetailSection('Description', career.description),
-              const SizedBox(height: 16),
-              _buildDetailSection(
-                'Required Skills',
-                career.requiredSkills.join(', '),
-              ),
-              const SizedBox(height: 16),
-              _buildDetailSection(
-                'Recommended Skills',
-                career.recommendedSkills.join(', '),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatBox(
-                      'Salary',
-                      '\$${(career.salaryRange / 1000).toStringAsFixed(0)}K',
-                      Icons.attach_money,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatBox(
-                      'Growth',
-                      '+${career.growthRate}%',
-                      Icons.trending_up,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _saveCareer(career);
-                  },
-                  child: const Text('Save Career Goal'),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -792,72 +677,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  Widget _buildDetailSection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          content,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-            height: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatBox(String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _saveCareer(CareerRecommendation career) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${career.title} saved to your career goals'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -874,12 +693,20 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
             ListTile(
               leading: const Icon(Icons.trending_up),
               title: const Text('Sort by Growth Rate'),
-              trailing: Radio(value: false, groupValue: true, onChanged: (v) {}),
+              trailing: Radio(
+                value: false,
+                groupValue: true,
+                onChanged: (v) {},
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.attach_money),
               title: const Text('Sort by Salary'),
-              trailing: Radio(value: false, groupValue: true, onChanged: (v) {}),
+              trailing: Radio(
+                value: false,
+                groupValue: true,
+                onChanged: (v) {},
+              ),
             ),
           ],
         ),
