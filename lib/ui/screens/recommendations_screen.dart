@@ -385,11 +385,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                     children: [
                       Expanded(
                         child: TextField(
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCourse = value;
-                            });
-                          },
                           onSubmitted: (value) {
                             if (value.isNotEmpty) {
                               ref.invalidate(courseRecommendationsProvider(value));
@@ -417,7 +412,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                           }
                         },
                         icon: const Icon(Icons.search, size: 18),
-                        label: const Text('Get Recommendations'),
+                        label: const Text('Get'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -699,50 +694,4 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Filter Recommendations'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.sort),
-              title: const Text('Sort by Relevance'),
-              trailing: Radio(value: true, groupValue: true, onChanged: (v) {}),
-            ),
-            ListTile(
-              leading: const Icon(Icons.trending_up),
-              title: const Text('Sort by Growth Rate'),
-              trailing: Radio(
-                value: false,
-                groupValue: true,
-                onChanged: (v) {},
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money),
-              title: const Text('Sort by Salary'),
-              trailing: Radio(
-                value: false,
-                groupValue: true,
-                onChanged: (v) {},
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Apply'),
-          ),
-        ],
-      ),
-    );
-  }
 }

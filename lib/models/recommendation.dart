@@ -1,4 +1,3 @@
-
 class CareerRecommendation {
   final String title;
   final String category;
@@ -37,40 +36,81 @@ class CareerRecommendation {
   }
 }
 
+// Updated CourseRecommendation to match backend response
 class CourseRecommendation {
-  final String title;
-  final String description;
-  final String provider;
-  final List<String> instructors;
-  final int duration;
-  final String level;
-  final double price;
+  final String name;
+  final String url;
   final double rating;
-  final int numberOfStudents;
+  final String difficulty;
 
   CourseRecommendation({
-    required this.title,
-    required this.description,
-    required this.provider,
-    required this.instructors,
-    required this.duration,
-    required this.level,
-    required this.price,
+    required this.name,
+    required this.url,
     required this.rating,
-    required this.numberOfStudents,
+    required this.difficulty,
   });
+
+  // Compatibility getters for frontend that expects different field names
+  String get title => name;
+  String get level => difficulty;
+  String get provider => 'Coursera'; // Default since backend doesn't provide this
+  List<String> get instructors => []; // Empty list since backend doesn't provide this
+  int get duration => 0; // Default since backend doesn't provide this
+  double get price => 0.0; // Default since backend doesn't provide this
+  int get numberOfStudents => 0; // Default since backend doesn't provide this
+  String get description => 'Learn $name on Coursera'; // Generated description
 
   factory CourseRecommendation.fromJson(Map<String, dynamic> json) {
     return CourseRecommendation(
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      provider: json['provider'] ?? '',
-      instructors: List<String>.from(json['instructors'] ?? []),
-      duration: json['duration'] ?? 0,
-      level: json['level'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      rating: (json['rating'] ?? 0).toDouble(),
-      numberOfStudents: json['num_students'] ?? 0,
+      name: json['name'] ?? '',
+      url: json['url'] ?? '',
+      rating: (json['rating'] ?? 0.0).toDouble(),
+      difficulty: json['difficulty'] ?? 'Beginner',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'url': url,
+      'rating': rating,
+      'difficulty': difficulty,
+    };
+  }
+}
+
+// New Job model to match backend job search response
+class JobRecommendation {
+  final String title;
+  final String company;
+  final String location;
+  final String description;
+  final String? jobUrl;
+  final String? employmentType;
+  final String? experienceLevel;
+  final List<String> skills;
+
+  JobRecommendation({
+    required this.title,
+    required this.company,
+    required this.location,
+    required this.description,
+    this.jobUrl,
+    this.employmentType,
+    this.experienceLevel,
+    this.skills = const [],
+  });
+
+  factory JobRecommendation.fromJson(Map<String, dynamic> json) {
+    return JobRecommendation(
+      title: json['title'] ?? json['job_title'] ?? '',
+      company: json['company'] ?? json['company_name'] ?? '',
+      location: json['location'] ?? '',
+      description: json['description'] ?? json['job_description'] ?? '',
+      jobUrl: json['job_url'] ?? json['url'],
+      employmentType: json['employment_type'] ?? json['job_type'],
+      experienceLevel: json['experience_level'],
+      skills: json['skills'] != null ? List<String>.from(json['skills']) : [],
     );
   }
 }
