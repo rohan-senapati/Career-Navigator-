@@ -18,38 +18,69 @@ class RecommendationService {
   final Dio dio;
   RecommendationService(this.dio);
 
-  Future<List<CareerRecommendation>> getCareerRecommendations() async {
+  // Job search - matches backend /search/jobs endpoint
+  Future<List<JobRecommendation>> getJobRecommendations({
+    required String term,
+    required String location,
+  }) async {
     try {
-      final response = await dio.post('/search/jobs');
+      final response = await dio.post(
+        '/search/jobs',
+        data: {
+          "term": term,
+          "location": location,
+        },
+      );
+
       if (response.statusCode == 200) {
-        return (response.data as List)
-            .map((json) => CareerRecommendation.fromJson(json))
+        final jobs = response.data['jobs'] as List;
+        return jobs
+            .map((json) => JobRecommendation.fromJson(json))
             .toList();
       } else {
-        throw Exception('Failed to fetch career recommendations');
+        throw Exception('Failed to fetch job recommendations');
       }
     } catch (e) {
+      print('Job search error: $e');
       rethrow;
     }
   }
 
-  Future<List<CourseRecommendation>> getCourseRecommendations(String coursename) async {
+  // Course recommendations - matches backend /recommend/courses endpoint
+  Future<List<CourseRecommendation>> getCourseRecommendations(String courseName) async {
     try {
+      // Backend expects "course_name" field
       final response = await dio.post(
         '/recommend/courses',
-        data: {"course_name": coursename}, // The key must match FastAPI's expected field
+        data: {"course_name": courseName},
       );
 
       if (response.statusCode == 200) {
-        return (response.data as List)
+        // Backend returns a list directly
+        final courses = response.data as List;
+        return courses
             .map((json) => CourseRecommendation.fromJson(json))
             .toList();
       } else {
         throw Exception('Failed to fetch course recommendations');
       }
     } catch (e) {
+      print('Course recommendation error: $e');
       rethrow;
     }
+  }
+
+  // Get all available course names from CSV (for autocomplete/suggestions)
+  Future<List<String>> getAvailableCourseNames() async {
+    // This endpoint doesn't exist in backend yet, but could be added
+    // For now, return empty list or hardcoded popular courses
+    return [
+      'Python Programming Essentials',
+      'Business Strategy: Business Model Canvas Analysis',
+      'Finance for Managers',
+      'Programming Languages, Part A',
+      'Creating Dashboards and Storytelling with Tableau',
+    ];
   }
 }
 
@@ -57,12 +88,28 @@ final recommendationServiceProvider = Provider<RecommendationService>((ref) {
   return RecommendationService(ref.watch(dioProvider));
 });
 
-final careerRecommendationsProvider = FutureProvider.autoDispose<List<CareerRecommendation>>((ref) async {
+// Job recommendations provider with search parameters
+final jobRecommendationsProvider = FutureProvider.autoDispose
+    .family<List<JobRecommendation>, Map<String, String>>((ref, params) async {
   final service = ref.read(recommendationServiceProvider);
-  return service.getCareerRecommendations();
+  return service.getJobRecommendations(
+    term: params['term'] ?? '',
+    location: params['location'] ?? '',
+  );
 });
 
-final courseRecommendationsProvider = FutureProvider.autoDispose.family<List<CourseRecommendation>, String>((ref, coursename) async {
+// Course recommendations provider with course name
+final courseRecommendationsProvider = FutureProvider.autoDispose
+    .family<List<CourseRecommendation>, String>((ref, courseName) async {
+  if (courseName.isEmpty) {
+    return [];
+  }
   final service = ref.read(recommendationServiceProvider);
-  return service.getCourseRecommendations(coursename);
+  return service.getCourseRecommendations(courseName);
+});
+
+// Available course names provider
+final availableCourseNamesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  final service = ref.read(recommendationServiceProvider);
+  return service.getAvailableCourseNames();
 });
