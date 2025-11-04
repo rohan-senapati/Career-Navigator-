@@ -19,6 +19,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTab = 0;
+  String? _selectedCourse;
 
   @override
   void initState() {
@@ -43,7 +44,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-          _selectedTab == 0 ? 'Discover Careers' : 'Smart Course Recommender',
+          _selectedTab == 0 ? 'Find Your Dream Job' : 'Smart Course Recommender',
           style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: _selectedTab == 0
@@ -51,7 +52,8 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
             : const Color(0xFF2C3E50),
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: Navigator.of(context).canPop()
+        leading: _selectedTab == 1 ? const Icon(Icons.school, color: Colors.white) : 
+        Navigator.of(context).canPop()
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                 onPressed: () => context.pop(),
@@ -60,13 +62,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                 onPressed: () => context.go('/'),
               ),
-        actions: [
-          if (_selectedTab == 0) // Only show filter for Job Finder
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () => _showFilterDialog(),
-            ),
-        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -85,13 +80,18 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [_buildJobsTab(), _buildCoursesTab()],
+        children: [
+          _buildJobsTab(),
+          buildCoursesTab(context, ref),
+        ],
       ),
       bottomNavigationBar: const CustomNavBar(currentIndex: 2),
     );
   }
 
   Widget _buildJobsTab() {
+    final careersAsync = ref.watch(careerRecommendationsProvider);
+
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -129,10 +129,10 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withAlpha(25),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -179,7 +179,9 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        ref.invalidate(careerRecommendationsProvider);
+                      },
                       icon: const Icon(Icons.search),
                       label: const Text('Search Jobs'),
                       style: ElevatedButton.styleFrom(
@@ -218,22 +220,29 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Placeholder for results
-                Center(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Searching for jobs...',
-                        style: GoogleFonts.inter(
-                          color: AppColors.textSecondary,
+                careersAsync.when(
+                  data: (careers) {
+                    if (careers.isEmpty) {
+                      return _buildEmptyState('No job recommendations available');
+                    }
+                    return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 1,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.2 : 2.5,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
+                        itemCount: careers.length,
+                        itemBuilder: (context, index) {
+                          final career = careers[index];
+                          return _buildJobCard(career);
+                        });
+                  },
+                  loading: () => _buildLoadingState(),
+                  error: (error, _) => _buildErrorState(error.toString()),
+                )
               ],
             ),
           ),
@@ -242,8 +251,72 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  Widget _buildCoursesTab() {
-    final coursesAsync = ref.watch(courseRecommendationsProvider);
+  Widget _buildJobCard(CareerRecommendation career) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        Text(
+        career.title,
+        style: GoogleFonts.inter(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+        ),
+        ),
+          const SizedBox(height: 4),
+          Text(
+            career.category, // Using category as company name
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                'Mumbai, Maharashtra, India', // Placeholder
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          const Spacer(),
+          const Divider(),
+          TextButton(
+            onPressed: () {},
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'View Job',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildCoursesTab(BuildContext context, WidgetRef ref) {
+    final coursesAsync = ref.watch(courseRecommendationsProvider(_selectedCourse ?? ""));
 
     return SingleChildScrollView(
       child: Column(
@@ -253,10 +326,9 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF3498DB), Color(0xFF2980B9)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+                  colors: [Color(0xFF3498DB), Color(0xFF2980B9)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight),
             ),
             child: Column(
               children: [
@@ -272,13 +344,15 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 const SizedBox(height: 8),
                 Text(
                   'Get personalized course recommendations based on your interests and goals',
-                  style: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-
           Transform.translate(
             offset: const Offset(0, -40),
             child: Container(
@@ -286,10 +360,10 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha:0.1),
+                    color: Colors.black.withAlpha(25),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -311,17 +385,22 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                     children: [
                       Expanded(
                         child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCourse = value;
+                            });
+                          },
+                          onSubmitted: (value) {
+                            if (value.isNotEmpty) {
+                              ref.invalidate(courseRecommendationsProvider(value));
+                            }
+                          },
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            hint: const Text('Select a course'),
+                            hintText: 'Enter a course to get started',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -333,20 +412,17 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
                         onPressed: () {
-                          ref.invalidate(courseRecommendationsProvider);
+                          if (_selectedCourse != null && _selectedCourse!.isNotEmpty) {
+                            ref.invalidate(courseRecommendationsProvider(_selectedCourse!));
+                          }
                         },
                         icon: const Icon(Icons.search, size: 18),
-                        label: const Text('Get'),
+                        label: const Text('Get Recommendations'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 15,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ],
@@ -355,14 +431,13 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Popular Courses',
+                  'Recommended Courses',
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -373,18 +448,25 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 coursesAsync.when(
                   data: (courses) {
                     if (courses.isEmpty) {
-                      return _buildEmptyState(
-                        'No course recommendations available',
-                      );
+                      return _buildEmptyState('No course recommendations available');
                     }
-                    return Column(
-                      children: courses
-                          .map((course) => _buildCourseCard(course))
-                          .toList(),
-                    );
+                    return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.9,
+                        ),
+                        itemCount: courses.length,
+                        itemBuilder: (context, index) {
+                          final course = courses[index];
+                          return _buildCourseCard(course);
+                        });
                   },
                   loading: () => _buildLoadingState(),
-                  error: (error, stack) => _buildErrorState(error.toString()),
+                  error: (error, _) => _buildErrorState(error.toString()),
                 ),
               ],
             ),
@@ -396,65 +478,32 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
 
   Widget _buildCourseCard(CourseRecommendation course) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha:0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.accent, AppColors.accentDark],
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.play_circle_outline,
-                size: 48,
-                color: Colors.white.withValues(alpha:0.1),
-              ),
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  course.title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        course.provider,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.accent,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
                     Icon(Icons.star, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
@@ -467,88 +516,57 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  course.title,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  course.description,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${(course.numberOfStudents / 1000).toStringAsFixed(0)}K students',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${course.duration}h',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '\$${course.price.toStringAsFixed(2)}',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
+                    _buildTag(course.level, AppColors.info),
+                    _buildTag('${course.duration}h', AppColors.secondary),
                   ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _showCourseDetails(course),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('View Course'),
-                  ),
                 ),
               ],
             ),
           ),
+          const Spacer(),
+           SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _showCourseDetails(course),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                    topLeft: Radius.circular(0),
+                    topRight: Radius.circular(0),
+                  ),
+                ),
+              ),
+              child: const Text('View Course'),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTag(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withAlpha(50),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
       ),
     );
   }
@@ -585,11 +603,15 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               fontSize: 16,
               color: AppColors.textSecondary,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              ref.invalidate(courseRecommendationsProvider);
+              ref.invalidate(careerRecommendationsProvider);
+              if (_selectedCourse != null) {
+                ref.invalidate(courseRecommendationsProvider(_selectedCourse!));
+              }
             },
             child: const Text('Refresh'),
           ),
@@ -625,8 +647,10 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-
-              ref.invalidate(courseRecommendationsProvider);
+              ref.invalidate(careerRecommendationsProvider);
+              if (_selectedCourse != null) {
+                ref.invalidate(courseRecommendationsProvider(_selectedCourse!));
+              }
             },
             child: const Text('Try Again'),
           ),

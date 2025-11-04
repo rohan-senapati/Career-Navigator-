@@ -1,18 +1,46 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/constants.dart';
 import '../models/recommendation.dart';
 
+// Setup Dio with baseUrl pointing to your backend URL
+final dioProvider = Provider<Dio>((ref) {
+  return Dio(BaseOptions(
+    baseUrl: "http://10.0.2.2:8000",
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  ));
+});
+
 class RecommendationService {
-  final Dio _dio;
+  final Dio dio;
+  RecommendationService(this.dio);
 
-  RecommendationService(this._dio);
-
-  // Fetch course recommendations from backend
-  Future<List<CourseRecommendation>> getCourseRecommendations() async {
+  Future<List<CareerRecommendation>> getCareerRecommendations() async {
     try {
-      final response = await _dio.get('/recommend/courses');
-      if (response.statusCode == 200 && response.data is List) {
+      final response = await dio.post('/search/jobs');
+      if (response.statusCode == 200) {
+        return (response.data as List)
+            .map((json) => CareerRecommendation.fromJson(json))
+            .toList();
+      } else {
+        throw Exception('Failed to fetch career recommendations');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<CourseRecommendation>> getCourseRecommendations(String coursename) async {
+    try {
+      final response = await dio.post(
+        '/recommend/courses',
+        data: {"course_name": coursename}, // The key must match FastAPI's expected field
+      );
+
+      if (response.statusCode == 200) {
         return (response.data as List)
             .map((json) => CourseRecommendation.fromJson(json))
             .toList();
@@ -20,28 +48,21 @@ class RecommendationService {
         throw Exception('Failed to fetch course recommendations');
       }
     } catch (e) {
-      // Log or handle error if needed
       rethrow;
     }
   }
 }
 
-// Provider for RecommendationService
-final recommendationServiceProvider =
-Provider<RecommendationService>((ref) {
-  final dio = Dio(
-    BaseOptions(
-      baseUrl: AppConstants.baseUrl,
-      connectTimeout: Duration(milliseconds: AppConstants.apiTimeout),
-      receiveTimeout: Duration(milliseconds: AppConstants.apiTimeout),
-    ),
-  );
-  // Optionally add interceptors for auth tokens here
-  return RecommendationService(dio);
+final recommendationServiceProvider = Provider<RecommendationService>((ref) {
+  return RecommendationService(ref.watch(dioProvider));
 });
 
-final courseRecommendationsProvider =
-FutureProvider<List<CourseRecommendation>>((ref) async {
-  final service = ref.watch(recommendationServiceProvider);
-  return service.getCourseRecommendations();
+final careerRecommendationsProvider = FutureProvider.autoDispose<List<CareerRecommendation>>((ref) async {
+  final service = ref.read(recommendationServiceProvider);
+  return service.getCareerRecommendations();
+});
+
+final courseRecommendationsProvider = FutureProvider.autoDispose.family<List<CourseRecommendation>, String>((ref, coursename) async {
+  final service = ref.read(recommendationServiceProvider);
+  return service.getCourseRecommendations(coursename);
 });
