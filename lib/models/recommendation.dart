@@ -1,3 +1,4 @@
+// lib/models/recommendation.dart
 class CareerRecommendation {
   final String title;
   final String category;
@@ -36,7 +37,6 @@ class CareerRecommendation {
   }
 }
 
-// Updated CourseRecommendation to match backend response
 class CourseRecommendation {
   final String name;
   final String url;
@@ -50,15 +50,14 @@ class CourseRecommendation {
     required this.difficulty,
   });
 
-  // Compatibility getters for frontend that expects different field names
   String get title => name;
   String get level => difficulty;
-  String get provider => 'Coursera'; // Default since backend doesn't provide this
-  List<String> get instructors => []; // Empty list since backend doesn't provide this
-  int get duration => 0; // Default since backend doesn't provide this
-  double get price => 0.0; // Default since backend doesn't provide this
-  int get numberOfStudents => 0; // Default since backend doesn't provide this
-  String get description => 'Learn $name on Coursera'; // Generated description
+  String get provider => 'Coursera';
+  List<String> get instructors => [];
+  int get duration => 0;
+  double get price => 0.0;
+  int get numberOfStudents => 0;
+  String get description => 'Learn $name on Coursera';
 
   factory CourseRecommendation.fromJson(Map<String, dynamic> json) {
     return CourseRecommendation(
@@ -79,7 +78,6 @@ class CourseRecommendation {
   }
 }
 
-// New Job model to match backend job search response
 class JobRecommendation {
   final String title;
   final String company;
@@ -89,6 +87,9 @@ class JobRecommendation {
   final String? employmentType;
   final String? experienceLevel;
   final List<String> skills;
+  final String? salaryRange;
+  final String? postedDate;
+  final String? site;
 
   JobRecommendation({
     required this.title,
@@ -99,18 +100,45 @@ class JobRecommendation {
     this.employmentType,
     this.experienceLevel,
     this.skills = const [],
+    this.salaryRange,
+    this.postedDate,
+    this.site,
   });
 
   factory JobRecommendation.fromJson(Map<String, dynamic> json) {
+    // Handle different possible field names from the API
+    String extractString(Map<String, dynamic> json, List<String> keys, {String defaultValue = ''}) {
+      for (var key in keys) {
+        if (json.containsKey(key) && json[key] != null) {
+          return json[key].toString();
+        }
+      }
+      return defaultValue;
+    }
+
+
     return JobRecommendation(
-      title: json['title'] ?? json['job_title'] ?? '',
-      company: json['company'] ?? json['company_name'] ?? '',
-      location: json['location'] ?? '',
-      description: json['description'] ?? json['job_description'] ?? '',
-      jobUrl: json['job_url'] ?? json['url'],
-      employmentType: json['employment_type'] ?? json['job_type'],
-      experienceLevel: json['experience_level'],
-      skills: json['skills'] != null ? List<String>.from(json['skills']) : [],
+      title: extractString(json, ['title', 'job_title', 'position']),
+      company: extractString(json, ['company', 'company_name', 'employer']),
+      location: extractString(json, ['location', 'job_location']),
+      description: extractString(json, ['description', 'job_description', 'summary']),
+      jobUrl: extractString(json, ['job_url', 'url', 'link'])
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'company': company,
+      'location': location,
+      'description': description,
+      'job_url': jobUrl,
+      'employment_type': employmentType,
+      'experience_level': experienceLevel,
+      'skills': skills,
+      'salary_range': salaryRange,
+      'posted_date': postedDate,
+      'site': site,
+    };
   }
 }

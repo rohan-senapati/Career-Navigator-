@@ -1,3 +1,4 @@
+// lib/ui/screens/recommendations_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,12 +22,10 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
   late TabController _tabController;
   int _selectedTab = 0;
 
-  // Job search fields
   final TextEditingController _jobTermController = TextEditingController();
   final TextEditingController _jobLocationController = TextEditingController();
   Map<String, String>? _currentJobSearch;
 
-  // Course search field
   final TextEditingController _courseNameController = TextEditingController();
   String? _selectedCourse;
 
@@ -51,39 +50,41 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
   }
 
   void _searchJobs() {
-    if (_jobTermController.text
-        .trim()
-        .isEmpty ||
-        _jobLocationController.text
-            .trim()
-            .isEmpty) {
+    final term = _jobTermController.text.trim();
+    final location = _jobLocationController.text.trim();
+
+    if (term.isEmpty || location.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please enter both job title and location')),
+        SnackBar(
+          content: const Text('Please enter both job title and location'),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
     setState(() {
-      _currentJobSearch = {
-        'term': _jobTermController.text.trim(),
-        'location': _jobLocationController.text.trim(),
-      };
+      _currentJobSearch = {'term': term, 'location': location};
     });
   }
 
   void _searchCourses() {
-    if (_courseNameController.text
-        .trim()
-        .isEmpty) {
+    final courseName = _courseNameController.text.trim();
+
+    if (courseName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a course name')),
+        SnackBar(
+          content: const Text('Please enter a course name'),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
     setState(() {
-      _selectedCourse = _courseNameController.text.trim();
+      _selectedCourse = courseName;
     });
   }
 
@@ -143,7 +144,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.all(24),
             width: double.infinity,
@@ -161,15 +161,13 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Search through thousands of job listings to find the perfect opportunity for your career growth.',
+                  'Search through thousands of job listings',
                   style: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-
-          // Search Card
           Transform.translate(
             offset: const Offset(0, -40),
             child: Container(
@@ -191,10 +189,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                   TextField(
                     controller: _jobTermController,
                     decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.work_outline,
-                        color: AppColors.textSecondary,
-                      ),
+                      prefixIcon: Icon(Icons.work_outline, color: AppColors.textSecondary),
                       hintText: 'Job Title (e.g. Web Developer)',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -205,15 +200,13 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                         borderSide: BorderSide(color: AppColors.primary),
                       ),
                     ),
+                    onSubmitted: (_) => _searchJobs(),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _jobLocationController,
                     decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.location_on_outlined,
-                        color: AppColors.textSecondary,
-                      ),
+                      prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textSecondary),
                       hintText: 'Location (e.g. Mumbai)',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -224,6 +217,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                         borderSide: BorderSide(color: AppColors.primary),
                       ),
                     ),
+                    onSubmitted: (_) => _searchJobs(),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -246,8 +240,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
               ),
             ),
           ),
-
-          // Search Results
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
@@ -269,7 +261,10 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 ),
                 const SizedBox(height: 16),
                 _currentJobSearch == null
-                    ? _buildEmptyState('Enter job title and location to search')
+                    ? _buildEmptyState(
+                  'Enter job title and location to start searching',
+                  Icons.search_off,
+                )
                     : _buildJobResults(),
               ],
             ),
@@ -285,7 +280,10 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     return jobsAsync.when(
       data: (jobs) {
         if (jobs.isEmpty) {
-          return _buildEmptyState('No jobs found. Try different search terms.');
+          return _buildEmptyState(
+            'No jobs found. Try different search terms.',
+            Icons.work_off_outlined,
+          );
         }
         return ListView.builder(
           shrinkWrap: true,
@@ -294,7 +292,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           itemBuilder: (context, index) => _buildJobCard(jobs[index]),
         );
       },
-      loading: () => _buildLoadingState(),
+      loading: () => _buildLoadingState('Searching for jobs...'),
       error: (error, _) => _buildErrorState(error.toString()),
     );
   }
@@ -346,14 +344,12 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
           const SizedBox(height: 4),
           Row(
             children: [
-              Icon(Icons.location_on_outlined, size: 16,
-                  color: AppColors.textSecondary),
+              Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   job.location,
-                  style: GoogleFonts.inter(
-                      fontSize: 14, color: AppColors.textSecondary),
+                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                 ),
               ),
             ],
@@ -362,34 +358,39 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
             const SizedBox(height: 12),
             Text(
               job.description,
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: AppColors.textSecondary),
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
           ],
           const SizedBox(height: 12),
-          const Divider(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               if (job.employmentType != null)
                 _buildTag(job.employmentType!, AppColors.info),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () {
-                  if (job.jobUrl != null) {
-                    _launchUrl(job.jobUrl!);
-                  }
-                },
-                icon: const Icon(Icons.open_in_new, size: 16),
-                label: const Text('View Job'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                ),
-              ),
+              if (job.site != null)
+                _buildTag(job.site!, AppColors.secondary),
+              if (job.salaryRange != null)
+                _buildTag(job.salaryRange!, AppColors.success),
             ],
           ),
+          if (job.jobUrl != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _launchUrl(job.jobUrl!),
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('View Job Details'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -422,11 +423,8 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Get personalized course recommendations based on your interests',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+                  'Get personalized course recommendations',
+                  style: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -461,56 +459,72 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter a course name to get recommendations',
+                    'Enter exact course name from Coursera',
+                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _courseNameController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Python Programming Essentials',
+                      hintStyle: GoogleFonts.inter(fontSize: 14),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: _searchCourses,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                    onSubmitted: (_) => _searchCourses(),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Popular Courses:',
                     style: GoogleFonts.inter(
-                      fontSize: 13,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _courseNameController,
-                          decoration: InputDecoration(
-                            hintText: 'e.g., Python Programming Essentials',
-                            hintStyle: GoogleFonts.inter(fontSize: 14),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 15,
+                      'Python Programming',
+                      'Machine Learning',
+                      'Web Development',
+                      'Data Science',
+                    ].map((course) =>
+                        InkWell(
+                          onTap: () {
+                            _courseNameController.text = course;
+                            _searchCourses();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withAlpha(20),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.shade300),
+                            child: Text(
+                              course,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.primary),
-                            ),
-                          ),
-                          onSubmitted: (_) => _searchCourses(),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: _searchCourses,
-                        icon: const Icon(Icons.search, size: 18),
-                        label: const Text('Search'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 15,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                      ),
-                    ],
+                    ).toList(),
                   ),
                 ],
               ),
@@ -532,7 +546,9 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                 const SizedBox(height: 16),
                 _selectedCourse == null
                     ? _buildEmptyState(
-                    'Enter a course name to get recommendations')
+                  'Enter a course name to get recommendations',
+                  Icons.school_outlined,
+                )
                     : _buildCourseResults(),
               ],
             ),
@@ -543,43 +559,31 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
   }
 
   Widget _buildCourseResults() {
-    final coursesAsync = ref.watch(
-        courseRecommendationsProvider(_selectedCourse!));
+    final coursesAsync = ref.watch(courseRecommendationsProvider(_selectedCourse!));
 
     return coursesAsync.when(
       data: (courses) {
         if (courses.isEmpty) {
           return _buildEmptyState(
-              'No recommendations found. Try a different course name.');
+            'No similar courses found. Please check the course name and try again.',
+            Icons.search_off,
+          );
         }
-        return GridView.builder(
+        return ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: MediaQuery
-                .of(context)
-                .size
-                .width > 1200
-                ? 3
-                : (MediaQuery
-                .of(context)
-                .size
-                .width > 600 ? 2 : 1),
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.85,
-          ),
           itemCount: courses.length,
           itemBuilder: (context, index) => _buildCourseCard(courses[index]),
         );
       },
-      loading: () => _buildLoadingState(),
+      loading: () => _buildLoadingState('Finding similar courses...'),
       error: (error, _) => _buildErrorState(error.toString()),
     );
   }
 
   Widget _buildCourseCard(CourseRecommendation course) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -596,7 +600,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -607,8 +611,6 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -617,44 +619,36 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
                     const SizedBox(width: 4),
                     Text(
                       course.rating.toStringAsFixed(1),
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
+                    _buildTag(course.difficulty, _getDifficultyColor(course.difficulty)),
+                    const Spacer(),
                     Text(
-                      '(Coursera)',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                      'Coursera',
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                _buildTag(
-                    course.difficulty, _getDifficultyColor(course.difficulty)),
               ],
             ),
           ),
-          const Spacer(),
-          SizedBox(
+          Container(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _launchUrl(course.url),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                ),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
               ),
-              child: const Text('View on Coursera'),
+            ),
+            child: TextButton.icon(
+              onPressed: () => _launchUrl(course.url),
+              icon: const Icon(Icons.open_in_new, size: 16, color: Colors.white),
+              label: Text(
+                'View on Coursera',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -693,21 +687,17 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(48),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(color: AppColors.primary),
             const SizedBox(height: 16),
             Text(
-              'Loading recommendations...',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
+              message,
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -715,14 +705,13 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(String message, IconData icon) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(48),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            Icon(icon, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               message,
@@ -739,33 +728,52 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
   }
 
   Widget _buildErrorState(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
-            const SizedBox(height: 16),
-            Text(
-              'Something went wrong',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.error.withAlpha(20),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.error.withAlpha(100)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, size: 48, color: AppColors.error),
+          const SizedBox(height: 16),
+          Text(
+            'Oops! Something went wrong',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                if (_selectedTab == 0) {
+                  _currentJobSearch = null;
+                } else {
+                  _selectedCourse = null;
+                }
+              });
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -773,11 +781,14 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen>
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open $url')),
+          SnackBar(
+            content: Text('Could not open $url'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
